@@ -24,12 +24,12 @@ def save_raw_data(filename, data):
 async def main():
     # TEST URL: We'll test with a real YC startup job or a stable page
     # You can change this URL to any specific job posting later
-    target_url = "https://www.ycombinator.com/jobs" 
+    target_url = "https://www.ziprecruiter.com/c/Td/Job/Mobile-Software-Engineer-Intern-Co-op-%28Summer-2026%29/-in-Toronto,ON?jid=eaf44a4f0eae5b44&utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic" 
     
     raw_text = await scrape_page(target_url)
     
     # Save it with a timestamp or ID (using 'test_run' for now)
-    save_raw_data("yc_jobs_test.md", raw_text)
+    save_raw_data("TD_test_posting.md", raw_text)
 
 if __name__ == "__main__":
     asyncio.run(main())
