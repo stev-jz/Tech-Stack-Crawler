@@ -7,7 +7,7 @@ Automatically scrapes tech job postings from GitHub repos (like [SimplifyJobs/Su
 - 📥 **GitHub README Scraper** - Extracts job URLs from GitHub internship repos
 - ⚡ **Batch Processing** - Processes multiple jobs concurrently with asyncio
 - 🔄 **Job Tracking** - Avoids re-processing jobs already in the database
-- ⏰ **24-Hour Scheduler** - Automatically runs scraping on a schedule
+- ⏰ **Scrape Scheduler** - Automatically runs scraping on a schedule
 - 🤖 **AI Parsing** - Uses Google Gemini to extract tech skills from job descriptions
 - 📊 **PostgreSQL Storage** - Stores jobs and skills in a relational database
 
