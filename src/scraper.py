@@ -1,13 +1,31 @@
 import asyncio
 import os
-from crawl4ai import AsyncWebCrawler
+from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig
 
 async def scrape_page(url):
     print(f"Scraping: {url}")
     
+    # Configure browser for better JavaScript handling
+    browser_config = BrowserConfig(
+        headless=True,
+        verbose=True,
+        extra_args=["--disable-blink-features=AutomationControlled"]  # Avoid detection
+    )
+    
+    # Configure the crawl
+    crawl_config = CrawlerRunConfig(
+        wait_until="networkidle",  # Wait until network is idle
+        page_timeout=30000,  # 30 second timeout
+        delay_before_return_html=5.0,  # Wait 5 seconds for JS to fully render
+        js_code=[
+            "window.scrollTo(0, document.body.scrollHeight);",  # Scroll to bottom
+            "await new Promise(resolve => setTimeout(resolve, 2000));"  # Wait 2 more seconds
+        ]
+    )
+    
     # Initialize crawler
-    async with AsyncWebCrawler(verbose=True) as crawler:
-        result = await crawler.arun(url=url)
+    async with AsyncWebCrawler(config=browser_config) as crawler:
+        result = await crawler.arun(url=url, config=crawl_config)
         
         # We want the "markdown" version because it's easier for AI to read later
         return result.markdown
