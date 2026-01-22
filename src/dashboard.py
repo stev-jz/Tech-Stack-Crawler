@@ -13,7 +13,16 @@ from datetime import datetime
 sys.path.insert(0, '.')
 from db import get_db_connection, init_db, get_job_categories, categorize_all_jobs, get_top_skills_by_job_category, get_top_skills_filtered
 
-
+st.markdown("""
+    <style>
+    /* Hide the 3-dot menu */
+    #MainMenu {visibility: hidden;}
+    /* Hide the "Made with Streamlit" footer */
+    footer {visibility: hidden;}
+    /* Hide the top header bar */
+    header {visibility: hidden;}
+    </style>
+    """, unsafe_allow_html=True)
 # Hide the Streamlit style elements
 hide_st_style = """
             <style>
@@ -23,6 +32,7 @@ hide_st_style = """
             .stDeployButton {display:none;}
             </style>
             """
+        
 st.markdown(hide_st_style, unsafe_allow_html=True)
 # Page config
 st.set_page_config(

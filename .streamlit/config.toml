@@ -1,0 +1,2 @@
+[client]
+toolbarMode = "viewer"  # This removes the "Fork", "Edit", and "Manage App" buttons
