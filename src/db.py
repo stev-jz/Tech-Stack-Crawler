@@ -3,10 +3,15 @@ import psycopg
 from psycopg.rows import dict_row
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables (for local development)
 load_dotenv()
 
-DB_URL = os.getenv("DB_CONNECTION_STRING")
+# Try Streamlit secrets first (for Streamlit Cloud), fallback to env var (for local)
+try:
+    import streamlit as st
+    DB_URL = st.secrets.get("DB_CONNECTION_STRING", os.getenv("DB_CONNECTION_STRING"))
+except Exception:
+    DB_URL = os.getenv("DB_CONNECTION_STRING")
 
 # Skill normalization mappings
 SKILL_ALIASES = {
