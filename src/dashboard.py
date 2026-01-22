@@ -11,7 +11,7 @@ from datetime import datetime
 
 # Add src to path for imports
 sys.path.insert(0, '.')
-from db import get_db_connection, init_db
+from db import get_db_connection, init_db, get_job_categories, categorize_all_jobs, get_top_skills_by_job_category, get_top_skills_filtered
 
 # Page config
 st.set_page_config(
@@ -249,18 +249,22 @@ def show_overview():
     # Skills Overview section (combined chart and table)
     st.header("Skills Overview")
     
-    # Get available categories for filter
+    # Get available skill type categories for filter
     categories_data = get_skills_by_category()
     available_categories = [cat['category'] for cat in categories_data] if categories_data else []
     
-    # Create capitalized display options
+    # Create capitalized display options for skill types
     display_options = ["All"] + [cat.capitalize() for cat in available_categories]
     # Map display back to original category (for database queries)
     category_map = {display: orig for display, orig in zip(display_options, ["All"] + available_categories)}
     
-    # Category filter dropdown (narrower)
-    filter_col, _ = st.columns([1, 3])
-    with filter_col:
+    # Get job categories for filter
+    job_categories_data = get_job_categories()
+    job_category_options = ["All Jobs"] + [cat['category'] for cat in job_categories_data] if job_categories_data else ["All Jobs"]
+    
+    # Two filter dropdowns side by side
+    filter_col1, filter_col2, _ = st.columns([1, 1, 2])
+    with filter_col1:
         selected_display = st.selectbox(
             "Filter by skill type:",
             options=display_options,
@@ -269,11 +273,20 @@ def show_overview():
         )
         selected_category = category_map[selected_display]
     
-    # Get skills based on filter for chart (top 10)
-    if selected_category == "All":
-        top_skills_chart = get_top_skills(10)
-    else:
-        top_skills_chart = get_top_skills(10, category=selected_category)
+    with filter_col2:
+        selected_job_category = st.selectbox(
+            "Filter by job category:",
+            options=job_category_options,
+            index=0,
+            key="job_category_filter"
+        )
+    
+    # Get skills based on BOTH filters for chart (top 10)
+    top_skills_chart = get_top_skills_filtered(
+        limit=10,
+        skill_category=None if selected_category == "All" else selected_category,
+        job_category=None if selected_job_category == "All Jobs" else selected_job_category
+    )
     
     # Display chart
     if top_skills_chart:
@@ -296,11 +309,12 @@ def show_overview():
     
     st.markdown("---")
     
-    # Skills list (top 25, same filter) - styled like screenshot
-    if selected_category == "All":
-        top_skills_table = get_top_skills(25)
-    else:
-        top_skills_table = get_top_skills(25, category=selected_category)
+    # Skills list (top 25, same filters)
+    top_skills_table = get_top_skills_filtered(
+        limit=25,
+        skill_category=None if selected_category == "All" else selected_category,
+        job_category=None if selected_job_category == "All Jobs" else selected_job_category
+    )
     
     if top_skills_table:
         df_table = pd.DataFrame(top_skills_table)
