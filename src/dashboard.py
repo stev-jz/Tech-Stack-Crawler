@@ -29,12 +29,22 @@ st.markdown("""
         font-family: "Times New Roman", Times, serif !important;
     }
     /* Reset font for table column menus/popovers */
-    [data-baseweb="popover"], 
-    [data-baseweb="popover"] *,
-    [data-baseweb="menu"],
-    [data-baseweb="menu"] *,
-    .stDataFrameGlideDataEditor [role="menu"],
-    .stDataFrameGlideDataEditor [role="menu"] * {
+    [data-baseweb=\"popover\"], 
+    [data-baseweb=\"popover\"] *,
+    [data-baseweb=\"menu\"],
+    [data-baseweb=\"menu\"] *,
+    .stDataFrameGlideDataEditor [role=\"menu\"],
+    .stDataFrameGlideDataEditor [role=\"menu\"] *,
+    .stDataFrame [role=\"menu\"],
+    .stDataFrame [role=\"menu\"] *,
+    .stDataFrame [role=\"listbox\"],
+    .stDataFrame [role=\"listbox\"] *,
+    [data-testid=\"stDataFrame\"] [role=\"menu\"],
+    [data-testid=\"stDataFrame\"] [role=\"menu\"] *,
+    .gdg-overlay *,
+    .gdg-style *,
+    div[class*="overlay"] *,
+    div[class*="menu"] * {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     }
     [data-testid="stSidebar"] {
