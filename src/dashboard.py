@@ -13,27 +13,6 @@ from datetime import datetime
 sys.path.insert(0, '.')
 from db import get_db_connection, init_db, get_job_categories, categorize_all_jobs, get_top_skills_by_job_category, get_top_skills_filtered
 
-st.markdown("""
-    <style>
-    /* Hide the 3-dot menu */
-    #MainMenu {visibility: hidden;}
-    /* Hide the "Made with Streamlit" footer */
-    footer {visibility: hidden;}
-    /* Hide the top header bar */
-    header {visibility: hidden;}
-    </style>
-    """, unsafe_allow_html=True)
-# Hide the Streamlit style elements
-hide_st_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            .stDeployButton {display:none;}
-            </style>
-            """
-        
-st.markdown(hide_st_style, unsafe_allow_html=True)
 # Page config
 st.set_page_config(
     page_title="Tech Stack Crawler",
@@ -41,6 +20,27 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+# Custom CSS to hide Streamlit branding and UI elements
+hide_st_style = """
+    <style>
+    /* Hide the 3-dot menu */
+    #MainMenu {visibility: hidden; display: none !important;}
+    /* Hide the "Made with Streamlit" footer */
+    footer {visibility: hidden; display: none !important;}
+    /* Hide the top header bar */
+    header {visibility: hidden; display: none !important;}
+    /* Hide the deploy button */
+    .stDeployButton {display: none !important;}
+    /* Hide the decoration (top colored bar) */
+    [data-testid="stDecoration"] {display: none !important;}
+    /* Hide the toolbar */
+    [data-testid="stToolbar"] {display: none !important;}
+    /* Attempt to hide viewer badge if accessible */
+    .viewerBadge_container__1QSob {display: none !important;}
+    </style>
+"""
+st.markdown(hide_st_style, unsafe_allow_html=True)
 
 # Custom CSS for Times New Roman font, hide sidebar, and narrow content
 st.markdown("""
