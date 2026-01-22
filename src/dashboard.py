@@ -359,6 +359,9 @@ def show_pipeline_info():
         
         st.markdown("**View database stats**:")
         st.code("python src/scheduler.py --stats", language="bash")
+        
+        st.markdown("**Custom batch settings**:")
+        st.code("python src/scheduler.py --max-jobs 20 --batch-size 5 --max-concurrent 3", language="bash")
 
 
 if __name__ == "__main__":
