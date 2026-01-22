@@ -10,32 +10,111 @@ DB_URL = os.getenv("DB_CONNECTION_STRING")
 
 # Skill normalization mappings
 SKILL_ALIASES = {
+    # Languages
     'javascript': 'JavaScript',
     'typescript': 'TypeScript',
     'python': 'Python',
     'java': 'Java',
     'c#': 'C#',
-    'c++': 'C++',
+    'c': 'C/C++',
+    'c++': 'C/C++',
     'golang': 'Go',
+    'go': 'Go',
+    'r': 'R',
+    # Frameworks/Libraries
     'nodejs': 'Node.js',
     'node.js': 'Node.js',
+    'node': 'Node.js',
     'react.js': 'React',
     'reactjs': 'React',
     'vue.js': 'Vue',
     'vuejs': 'Vue',
     'angular.js': 'Angular',
     'angularjs': 'Angular',
+    'pytorch': 'PyTorch',
+    'tensorflow': 'TensorFlow',
+    'scikit-learn': 'scikit-learn',
+    'numpy': 'NumPy',
+    'pandas': 'pandas',
+    # Databases
     'postgresql': 'PostgreSQL',
     'postgres': 'PostgreSQL',
     'mongodb': 'MongoDB',
     'mysql': 'MySQL',
+    # Cloud
     'amazon web services': 'AWS',
+    'aws': 'AWS',
     'google cloud platform': 'GCP',
     'google cloud': 'GCP',
+    'gcp': 'GCP',
     'microsoft azure': 'Azure',
+    'azure': 'Azure',
+    # Tools
+    'git': 'Git',
+    'github': 'GitHub',
+    'gitlab': 'GitLab',
+    'docker': 'Docker',
+    'kubernetes': 'Kubernetes',
+    'k8s': 'Kubernetes',
+    'jira': 'Jira',
     'ci/cd': 'CI/CD',
     'continuous integration': 'CI/CD',
+    # OS/Systems
+    'linux': 'Linux',
+    'unix': 'Unix',
+    'bash': 'Bash',
+    'powershell': 'PowerShell',
+    # Methodologies
+    'scrum': 'Scrum',
+    'agile': 'Agile',
+    # Data Science
+    'matlab': 'MATLAB',
 }
+
+# Job category classification based on title keywords
+# Order matters - first match wins
+JOB_CATEGORIES = [
+    ('Machine Learning / AI', ['machine learning', 'ml', ' ai ', 'artificial intelligence', 
+                               'deep learning', 'llm', 'neural', 'nlp', 'computer vision',
+                               'genai', 'gen ai', 'ai agent', 'ai sw', 'ai intern',
+                               'computational']),
+    ('Data Science', ['data science', 'data scientist', 'data analyst', 'business intelligence', 
+                      'analytics', 'data engineering', 'data intern', 'data platform', 
+                      'data fabric', 'data management', 'failure analysis data', 'pricing data',
+                      'risk analysis']),
+    ('Research', ['research', 'scientist', 'phd', 'r&d', 'bell labs']),
+    ('DevOps / Infrastructure', ['devops', 'cloud', 'sre', 'infrastructure', 'platform engineer', 
+                                  'reliability', 'kubernetes', 'aws', 'azure', 'gcp',
+                                  'network systems', 'network automation']),
+    ('Software Engineering', ['software', 'developer', 'swe', 'full stack', 'fullstack', 
+                              'frontend', 'backend', 'web', 'mobile', 'ios', 'android', 
+                              'engineer', 'engineering', 'programmer', 'coder', 'technology',
+                              'digital', 'automation', 'gis', 'gaming', 'video algorithm',
+                              'implementation', 'product development', 'product manager',
+                              'simulation', 'robotics', 'rpa', 'it ', 'systems', 'wireless',
+                              'mes ', 'manufacturing execution', 'industry 4.0',
+                              'digitalization', 'dimensional', 'innovation', 'predictive',
+                              'language models', 'algorithms', '6g', 'digital twin',
+                              'platform', 'adtech', 'd365', 'consulting', 'euv', 'agile',
+                              'product associate', 'commerce']),
+]
+
+def categorize_job_title(title: str) -> str:
+    """
+    Categorize a job title based on keywords.
+    Returns the category name or 'Other' if no match.
+    """
+    if not title:
+        return 'Other'
+    
+    title_lower = title.lower()
+    
+    for category, keywords in JOB_CATEGORIES:
+        for keyword in keywords:
+            if keyword in title_lower:
+                return category
+    
+    return 'Other'
 
 def normalize_skill(skill_name: str) -> list:
     """
@@ -44,14 +123,19 @@ def normalize_skill(skill_name: str) -> list:
     """
     skill = skill_name.strip()
     
-    # Skip empty or very short skills
+    # Skip empty skills
+    if not skill:
+        return []
+    
+    # Check for known aliases FIRST (handles single-char like C, R)
+    if skill.lower() in SKILL_ALIASES:
+        return [SKILL_ALIASES[skill.lower()]]
+    
+    # Skip very short skills that aren't in aliases
     if len(skill) < 2:
         return []
     
-    # Check for known aliases FIRST (before splitting)
-    # This preserves skills like "CI/CD" as a single unit
-    if skill.lower() in SKILL_ALIASES:
-        return [SKILL_ALIASES[skill.lower()]]
+    # Note: alias check already done above, this is for the split case
     
     # Skip vague/non-technical skills
     skip_terms = ['problem solving', 'communication', 'teamwork', 'fast-paced', 
@@ -140,6 +224,11 @@ def init_db():
                 # Index for performance
                 cur.execute("CREATE INDEX IF NOT EXISTS idx_jobs_skills_gin ON jobs USING GIN (raw_skills_data);")
                 
+                # Add category column if it doesn't exist (for existing databases)
+                cur.execute("""
+                    ALTER TABLE jobs ADD COLUMN IF NOT EXISTS category TEXT;
+                """)
+                
                 conn.commit()
         print("PostgreSQL Database initialized successfully.")
     except Exception as e:
@@ -148,22 +237,35 @@ def init_db():
 def save_job_data(job_data):
     """
     Saves a parsed job to Postgres.
+    Skips non-tech jobs based on title analysis.
     """
+    job_title = job_data.get('job_title')
+    
+    # Skip non-tech jobs
+    if not is_tech_related_job(job_title):
+        print(f"⏭️  Skipping non-tech job: '{job_title}'")
+        return
+    
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             try:
+                # Categorize the job before saving
+                category = categorize_job_title(job_title)
+                
                 # 1. Insert Job (Using ON CONFLICT to ignore duplicates)
                 cur.execute("""
-                INSERT INTO jobs (title, company, url, raw_skills_data) 
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO jobs (title, company, url, raw_skills_data, category) 
+                VALUES (%s, %s, %s, %s, %s)
                 ON CONFLICT (url) DO UPDATE 
-                    SET raw_skills_data = EXCLUDED.raw_skills_data
+                    SET raw_skills_data = EXCLUDED.raw_skills_data,
+                        category = EXCLUDED.category
                 RETURNING id;
                 """, (
-                    job_data.get('job_title'), 
+                    job_title, 
                     job_data.get('company'), 
                     job_data.get('url'),
-                    psycopg.types.json.Json(job_data) # Store full JSONB
+                    psycopg.types.json.Json(job_data),  # Store full JSONB
+                    category
                 ))
                 
                 # Handle case where job already existed and we just updated it
@@ -254,5 +356,164 @@ def clear_failed_urls():
             print("Cleared all failed URLs")
 
 
+def categorize_all_jobs():
+    """
+    Categorize all existing jobs based on their titles.
+    This updates the category column for all jobs without re-scraping.
+    """
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            # Get all jobs
+            cur.execute("SELECT id, title FROM jobs")
+            jobs = cur.fetchall()
+            
+            updated = 0
+            for job in jobs:
+                category = categorize_job_title(job['title'])
+                cur.execute(
+                    "UPDATE jobs SET category = %s WHERE id = %s",
+                    (category, job['id'])
+                )
+                updated += 1
+            
+            conn.commit()
+            print(f"✅ Categorized {updated} jobs")
+            return updated
+
+
+def get_job_categories():
+    """Get job counts grouped by category."""
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT category, COUNT(*) as count
+                FROM jobs
+                WHERE category IS NOT NULL
+                GROUP BY category
+                ORDER BY count DESC
+            """)
+            return cur.fetchall()
+
+
+def get_top_skills_by_job_category(job_category: str, limit: int = 15):
+    """
+    Get top skills for jobs in a specific job category.
+    This filters skills based on which jobs they appear in.
+    """
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT s.name, s.category, COUNT(js.job_id) as job_count
+                FROM skills s
+                JOIN job_skills js ON s.id = js.skill_id
+                JOIN jobs j ON js.job_id = j.id
+                WHERE j.category = %s
+                GROUP BY s.id, s.name, s.category
+                ORDER BY job_count DESC
+                LIMIT %s
+            """, (job_category, limit))
+            return cur.fetchall()
+
+
+def get_top_skills_filtered(limit: int = 15, skill_category: str = None, job_category: str = None):
+    """
+    Get top skills with optional filtering by both skill category AND job category.
+    Both filters work simultaneously when provided.
+    """
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            # Build query dynamically based on filters
+            query = """
+                SELECT s.name, s.category, COUNT(js.job_id) as job_count
+                FROM skills s
+                JOIN job_skills js ON s.id = js.skill_id
+                JOIN jobs j ON js.job_id = j.id
+                WHERE 1=1
+            """
+            params = []
+            
+            if skill_category:
+                query += " AND s.category = %s"
+                params.append(skill_category)
+            
+            if job_category:
+                query += " AND j.category = %s"
+                params.append(job_category)
+            
+            query += """
+                GROUP BY s.id, s.name, s.category
+                ORDER BY job_count DESC
+                LIMIT %s
+            """
+            params.append(limit)
+            
+            cur.execute(query, params)
+            return cur.fetchall()
+
+
+# Non-tech job patterns to exclude from scraping
+NON_TECH_JOB_PATTERNS = [
+    'meteorologist', 'weather', 'clinical', 'nurse', 'nursing', 'medical', 'physician',
+    'pharmacist', 'environmental permitting', 'storm water', 'wastewater', 
+    'grid planning', 'renewable energy', 'power generation', 'nuclear', 
+    'earth science', 'geologist', 'chemistry', 'biologist', 'ecology',
+    'marketing', 'sales', 'accounting', 'finance analyst', 'hr ', 'human resources',
+    'legal', 'attorney', 'paralegal', 'recruiter', 'recruiting',
+    'public affairs', 'policy', 'security investigator'
+]
+
+
+def is_tech_related_job(title: str) -> bool:
+    """
+    Check if a job title is tech-related.
+    Returns True for tech jobs, False for non-tech jobs that should be excluded.
+    """
+    if not title:
+        return False
+    
+    title_lower = title.lower()
+    
+    # Check if title matches non-tech patterns
+    for pattern in NON_TECH_JOB_PATTERNS:
+        if pattern in title_lower:
+            return False
+    
+    return True
+
+
+def delete_non_tech_jobs():
+    """
+    Delete jobs that are not related to software/tech from the database.
+    Returns the count of deleted jobs.
+    """
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            # First, get all jobs to check
+            cur.execute("SELECT id, title FROM jobs")
+            jobs = cur.fetchall()
+            
+            deleted_count = 0
+            deleted_jobs = []
+            
+            for job in jobs:
+                if not is_tech_related_job(job['title']):
+                    deleted_jobs.append(f"  - {job['title']}")
+                    cur.execute("DELETE FROM jobs WHERE id = %s", (job['id'],))
+                    deleted_count += 1
+            
+            conn.commit()
+            
+            if deleted_jobs:
+                print(f"🗑️  Deleted {deleted_count} non-tech jobs:")
+                for job in deleted_jobs:
+                    print(job)
+            else:
+                print("✅ No non-tech jobs found to delete.")
+            
+            return deleted_count
+
+
 if __name__ == "__main__":
     init_db()
+    # Also categorize existing jobs when running db.py directly
+    categorize_all_jobs()
