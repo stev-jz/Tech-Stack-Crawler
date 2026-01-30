@@ -15,7 +15,7 @@ from db import get_db_connection, init_db, get_job_categories, categorize_all_jo
 
 # Page config
 st.set_page_config(
-    page_title="Tech Stack Crawler",
+    page_title="SkillScrape",
     page_icon="🔍",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -45,28 +45,16 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 # Custom CSS for Times New Roman font, hide sidebar, and narrow content
 st.markdown("""
 <style>
-    /* Apply Times New Roman to main content only, not popover menus */
-    .main, .main *, h1, h2, h3, p, span, div, label {
+    /* Apply Times New Roman to main content only - be specific to avoid table menus */
+    .main h1, .main h2, .main h3, .main p, 
+    .main [data-testid="stMarkdown"],
+    .main [data-testid="stMetricLabel"],
+    .main [data-testid="stMetricValue"],
+    .main [data-testid="stCaption"],
+    .main label,
+    .main .stSelectbox label,
+    .main .stButton button {
         font-family: "Times New Roman", Times, serif !important;
-    }
-    /* Reset font for table column menus/popovers */
-    [data-baseweb=\"popover\"], 
-    [data-baseweb=\"popover\"] *,
-    [data-baseweb=\"menu\"],
-    [data-baseweb=\"menu\"] *,
-    .stDataFrameGlideDataEditor [role=\"menu\"],
-    .stDataFrameGlideDataEditor [role=\"menu\"] *,
-    .stDataFrame [role=\"menu\"],
-    .stDataFrame [role=\"menu\"] *,
-    .stDataFrame [role=\"listbox\"],
-    .stDataFrame [role=\"listbox\"] *,
-    [data-testid=\"stDataFrame\"] [role=\"menu\"],
-    [data-testid=\"stDataFrame\"] [role=\"menu\"] *,
-    .gdg-overlay *,
-    .gdg-style *,
-    div[class*="overlay"] *,
-    div[class*="menu"] * {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     }
     [data-testid="stSidebar"] {
         display: none;
@@ -256,7 +244,8 @@ def main():
 
 def show_overview():
     """Overview dashboard section."""
-    st.markdown('<h1><strong>Tech Stack</strong> Crawler</h1>', unsafe_allow_html=True)
+    st.markdown('<h1><strong>SkillScrape</strong></h1>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size: 1.25rem; color: #888; margin-top: -0.5rem; margin-bottom: 1.5rem;">Frequently appearing skills found in tech internship postings</p>', unsafe_allow_html=True)
     
     # Stats cards
     stats = get_overview_stats()
@@ -271,9 +260,13 @@ def show_overview():
     
     # Refresh button below metrics
     if st.button("Refresh Data"):
+        st.session_state['last_refreshed'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         st.cache_data.clear()
         st.rerun()
-    st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Only show "Last updated" if refresh was pressed
+    if 'last_refreshed' in st.session_state:
+        st.caption(f"Last updated: {st.session_state['last_refreshed']}")
     
     st.markdown("---")
     
@@ -289,9 +282,17 @@ def show_overview():
     # Map display back to original category (for database queries)
     category_map = {display: orig for display, orig in zip(display_options, ["All"] + available_categories)}
     
-    # Get job categories for filter
+    # Get job categories for filter (put "Other" at the bottom)
     job_categories_data = get_job_categories()
-    job_category_options = ["All Jobs"] + [cat['category'] for cat in job_categories_data] if job_categories_data else ["All Jobs"]
+    if job_categories_data:
+        categories = [cat['category'] for cat in job_categories_data]
+        # Move "Other" to the end
+        if 'Other' in categories:
+            categories.remove('Other')
+            categories.append('Other')
+        job_category_options = ["All Jobs"] + categories
+    else:
+        job_category_options = ["All Jobs"]
     
     # Two filter dropdowns side by side
     filter_col1, filter_col2, _ = st.columns([1, 1, 2])
