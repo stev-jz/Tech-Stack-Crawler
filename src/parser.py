@@ -31,16 +31,26 @@ def parse_job_text(raw_text):
        DO NOT include vague terms like "problem solving", "communication", "teamwork", "fast-paced".
     5. Limit concepts to MAX 5 most important ones.
 
+    CATEGORY RULES (follow strictly):
+    - languages: ONLY actual programming languages (Python, Java, C++, JavaScript, Go, Rust, etc.)
+      NOT runtimes, NOT operating systems
+    - frameworks: Runtimes and libraries (Node.js, React, Spring Boot, Django, .NET, Express, etc.)
+      Node.js is a FRAMEWORK, not a language!
+    - tools: Operating systems, DevOps tools, cloud platforms (Linux, Unix, Windows, Git, Docker, AWS, etc.)
+      Linux is a TOOL, not a language!
+    - databases: Database systems only (PostgreSQL, MongoDB, Redis, MySQL, etc.)
+    - concepts: Methodologies only (Agile, CI/CD, OOP, REST, etc.) MAX 5
+
     Return ONLY a JSON object with this exact schema:
     {{
       "job_title": "Extract the likely job title",
       "company": "Extract company name if present, else null",
       "skills": {{
-        "languages": ["Programming languages: Python, Java, C++, JavaScript, etc."],
-        "frameworks": ["Frameworks/Libraries: React, Spring Boot, Django, .NET, etc."],
-        "databases": ["Databases: PostgreSQL, MongoDB, Redis, MySQL, etc."],
-        "tools": ["Tools: Git, Docker, AWS, Kubernetes, Jenkins, Jira, etc."],
-        "concepts": ["ONLY well-known methodologies: Agile, CI/CD, OOP, REST, etc. MAX 5"]
+        "languages": ["Python, Java, C++, JavaScript, Go, TypeScript, etc."],
+        "frameworks": ["Node.js, React, Spring Boot, Django, .NET, Express, etc."],
+        "databases": ["PostgreSQL, MongoDB, Redis, MySQL, etc."],
+        "tools": ["Linux, Git, Docker, AWS, Kubernetes, Jenkins, etc."],
+        "concepts": ["Agile, CI/CD, OOP, REST, etc. MAX 5"]
       }}
     }}
 
@@ -104,6 +114,16 @@ RULES:
    DO NOT include vague terms like "problem solving", "communication", "teamwork", "fast-paced".
 5. Limit concepts to MAX 5 most important ones per job.
 
+CATEGORY RULES (follow strictly):
+- languages: ONLY actual programming languages (Python, Java, C++, JavaScript, Go, Rust, etc.)
+  NOT runtimes, NOT operating systems
+- frameworks: Runtimes and libraries (Node.js, React, Spring Boot, Django, .NET, Express, etc.)
+  Node.js is a FRAMEWORK, not a language!
+- tools: Operating systems, DevOps tools, cloud platforms (Linux, Unix, Windows, Git, Docker, AWS, etc.)
+  Linux is a TOOL, not a language!
+- databases: Database systems only (PostgreSQL, MongoDB, Redis, MySQL, etc.)
+- concepts: Methodologies only (Agile, CI/CD, OOP, REST, etc.) MAX 5
+
 Return ONLY a JSON array with one object per job, in the same order as input:
 [
   {{
@@ -111,11 +131,11 @@ Return ONLY a JSON array with one object per job, in the same order as input:
     "job_title": "Extract the likely job title",
     "company": "Extract company name if present, else null",
     "skills": {{
-      "languages": ["Programming languages"],
-      "frameworks": ["Frameworks/Libraries"],
-      "databases": ["Databases"],
-      "tools": ["Tools"],
-      "concepts": ["Methodologies, MAX 5"]
+      "languages": ["Python, Java, C++, JavaScript, Go, TypeScript, etc."],
+      "frameworks": ["Node.js, React, Spring Boot, Django, .NET, Express, etc."],
+      "databases": ["PostgreSQL, MongoDB, Redis, MySQL, etc."],
+      "tools": ["Linux, Git, Docker, AWS, Kubernetes, Jenkins, etc."],
+      "concepts": ["Agile, CI/CD, OOP, REST, etc. MAX 5"]
     }}
   }},
   ...
