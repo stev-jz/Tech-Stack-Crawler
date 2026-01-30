@@ -109,6 +109,16 @@ def get_job_stats() -> dict:
             """)
             jobs_today = cur.fetchone()['count']
             
+            # Jobs by category
+            cur.execute("""
+                SELECT category, COUNT(*) as count
+                FROM jobs
+                WHERE category IS NOT NULL
+                GROUP BY category
+                ORDER BY count DESC
+            """)
+            job_categories = cur.fetchall()
+            
             return {
                 'total_jobs': total_jobs,
                 'jobs_today': jobs_today,
@@ -120,6 +130,10 @@ def get_job_stats() -> dict:
                 'top_skills': [
                     {'name': r['name'], 'category': r['category'], 'job_count': r['job_count']}
                     for r in top_skills
+                ],
+                'job_categories': [
+                    {'category': r['category'], 'count': r['count']}
+                    for r in job_categories
                 ]
             }
 
@@ -135,6 +149,10 @@ def print_stats():
     print(f"\nTotal jobs: {stats['total_jobs']}")
     print(f"Jobs added today: {stats['jobs_today']}")
     print(f"Unique skills tracked: {stats['total_skills']}")
+    
+    print("\nJobs by Category:")
+    for cat in stats['job_categories']:
+        print(f"   {cat['category']}: {cat['count']} jobs")
     
     print("\nTop Companies:")
     for c in stats['top_companies'][:5]:
